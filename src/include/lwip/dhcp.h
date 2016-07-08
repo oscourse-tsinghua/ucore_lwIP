@@ -39,6 +39,7 @@
 
 #include "lwip/netif.h"
 #include "lwip/udp.h"
+#include "lwip/sys.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -57,6 +58,7 @@ extern "C" {
 
 struct dhcp
 {
+  sys_mutex_t mutex;
   /** transaction identifier of last sent request */
   u32_t xid;
   /** incoming msg */

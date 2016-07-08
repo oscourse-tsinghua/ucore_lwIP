@@ -416,6 +416,7 @@ dhcp_select(struct netif *netif)
   msecs = (u16_t)((dhcp->tries < 6 ? 1 << dhcp->tries : 60) * 1000);
   dhcp->request_timeout = (u16_t)((msecs + DHCP_FINE_TIMER_MSECS - 1) / DHCP_FINE_TIMER_MSECS);
   LWIP_DEBUGF(DHCP_DEBUG | LWIP_DBG_STATE, ("dhcp_select(): set request timeout %"U16_F" msecs\n", msecs));
+  //sys_mutex_unlock(&netif->dhcp->mutex);
   return result;
 }
 
@@ -769,6 +770,7 @@ dhcp_start(struct netif *netif)
 
   /* clear data structure */
   memset(dhcp, 0, sizeof(struct dhcp));
+  sys_mutex_new(&dhcp->mutex);
   /* dhcp_set_state(&dhcp, DHCP_STATE_OFF); */
 
   LWIP_DEBUGF(DHCP_DEBUG | LWIP_DBG_TRACE, ("dhcp_start(): starting DHCP configuration\n"));
@@ -976,6 +978,7 @@ dhcp_decline(struct netif *netif)
 static err_t
 dhcp_discover(struct netif *netif)
 {
+  kprintf("DHCP : Performing dhcp_discover\n");
   struct dhcp *dhcp = netif_dhcp_data(netif);
   err_t result = ERR_OK;
   u16_t msecs;
@@ -1023,6 +1026,7 @@ dhcp_discover(struct netif *netif)
   msecs = (u16_t)((dhcp->tries < 6 ? 1 << dhcp->tries : 60) * 1000);
   dhcp->request_timeout = (u16_t)((msecs + DHCP_FINE_TIMER_MSECS - 1) / DHCP_FINE_TIMER_MSECS);
   LWIP_DEBUGF(DHCP_DEBUG | LWIP_DBG_TRACE | LWIP_DBG_STATE, ("dhcp_discover(): set request timeout %"U16_F" msecs\n", msecs));
+  //sys_mutex_unlock(&netif->dhcp->mutex);
   return result;
 }
 
@@ -1125,7 +1129,13 @@ dhcp_bind(struct netif *netif)
     dhcp->autoip_coop_state = DHCP_AUTOIP_COOP_STATE_OFF;
   }
 #endif /* LWIP_DHCP_AUTOIP_COOP */
-
+  char temp[32];
+  ip4addr_ntoa_r(&dhcp->offered_ip_addr, temp, 32);
+  kprintf("DHCP : IP address = %s\n", temp);
+  ip4addr_ntoa_r(&sn_mask, temp, 32);
+  kprintf("DHCP : Subnet mask = %s\n", temp);
+  ip4addr_ntoa_r(&gw_addr, temp, 32);
+  kprintf("DHCP : Gateway = %s\n", temp);
   LWIP_DEBUGF(DHCP_DEBUG | LWIP_DBG_STATE, ("dhcp_bind(): IP: 0x%08"X32_F" SN: 0x%08"X32_F" GW: 0x%08"X32_F"\n",
               ip4_addr_get_u32(&dhcp->offered_ip_addr), ip4_addr_get_u32(&sn_mask), ip4_addr_get_u32(&gw_addr)));
   /* netif is now bound to DHCP leased address - set this before assigning the address

@@ -44,6 +44,7 @@
 
 #include "lwip/netif.h"
 #include "lwip/udp.h"
+#include "lwip/sys.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -66,6 +67,7 @@ typedef enum {
 
 struct dhcp
 {
+  sys_mutex_t mutex;
   /** transaction identifier of last sent request */
   u32_t xid;
   /** track PCB allocation state */

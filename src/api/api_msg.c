@@ -256,9 +256,11 @@ recv_udp(void *arg, struct udp_pcb *pcb, struct pbuf *p,
 
   len = p->tot_len;
   if (sys_mbox_trypost(&conn->recvmbox, buf) != ERR_OK) {
+      kprintf("recv udp post fail\n");
     netbuf_delete(buf);
     return;
   } else {
+    kprintf("recv udp post ok\n");
 #if LWIP_SO_RCVBUF
     SYS_ARCH_INC(conn->recv_avail, len);
 #endif /* LWIP_SO_RCVBUF */

@@ -74,7 +74,7 @@
 
 /** Platform specific diagnostic output.\n
  * Note the default implementation pulls in printf, which may
- * in turn pull in a lot of standard libary code. In resource-constrained 
+ * in turn pull in a lot of standard libary code. In resource-constrained
  * systems, this should be defined to something less resource-consuming.
  */
 #ifndef LWIP_PLATFORM_DIAG
@@ -83,9 +83,11 @@
 #include <stdlib.h>
 #endif
 
+typedef uintptr_t ptrdiff_t;
+
 /** Platform specific assertion handling.\n
  * Note the default implementation pulls in printf, fflush and abort, which may
- * in turn pull in a lot of standard libary code. In resource-constrained 
+ * in turn pull in a lot of standard libary code. In resource-constrained
  * systems, this should be defined to something less resource-consuming.
  */
 #ifndef LWIP_PLATFORM_ASSERT
@@ -177,7 +179,7 @@ typedef uintptr_t mem_ptr_t;
  * (e.g. INT_MAX, SSIZE_MAX).
  */
 #ifndef LWIP_NO_LIMITS_H
-#define LWIP_NO_LIMITS_H 0
+#define LWIP_NO_LIMITS_H 1
 #endif
 
 /* Include limits.h? */
@@ -193,14 +195,14 @@ typedef uintptr_t mem_ptr_t;
 #ifdef SSIZE_MAX
 /* If SSIZE_MAX is defined, unistd.h should provide the type as well */
 #ifndef LWIP_NO_UNISTD_H
-#define LWIP_NO_UNISTD_H 0
+#define LWIP_NO_UNISTD_H 1
 #endif
 #if !LWIP_NO_UNISTD_H
 #include <unistd.h>
 #endif
 #else /* SSIZE_MAX */
 typedef int ssize_t;
-#define SSIZE_MAX INT_MAX
+#define SSIZE_MAX 0x7FFFFFFF
 #endif /* SSIZE_MAX */
 
 /** Define this to 1 in arch/cc.h of your port if your compiler does not provide
@@ -209,7 +211,7 @@ typedef int ssize_t;
  * not, a private implementation is provided.
  */
 #ifndef LWIP_NO_CTYPE_H
-#define LWIP_NO_CTYPE_H 0
+#define LWIP_NO_CTYPE_H 1
 #endif
 
 #if LWIP_NO_CTYPE_H

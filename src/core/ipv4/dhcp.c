@@ -347,6 +347,7 @@ dhcp_select(struct netif *netif)
 
   /* create and initialize the DHCP message header */
   result = dhcp_create_msg(netif, dhcp, DHCP_REQUEST);
+  kprintf("DHCP : Performing dhcp_request\n");
   if (result == ERR_OK) {
     dhcp_option(dhcp, DHCP_OPTION_MAX_MSG_SIZE, DHCP_OPTION_MAX_MSG_SIZE_LEN);
     dhcp_option_short(dhcp, DHCP_MAX_MSG_LEN(netif));
@@ -935,6 +936,7 @@ dhcp_decline(struct netif *netif)
 static err_t
 dhcp_discover(struct netif *netif)
 {
+  kprintf("DHCP : Performing dhcp_discover\n");
   sys_mutex_lock(&netif->dhcp->mutex);
   struct dhcp *dhcp = netif->dhcp;
   err_t result = ERR_OK;
@@ -1084,6 +1086,13 @@ dhcp_bind(struct netif *netif)
   }
 #endif /* LWIP_DHCP_AUTOIP_COOP */
 
+  char temp[32];
+  ip4addr_ntoa_r(&dhcp->offered_ip_addr, temp, 32);
+  kprintf("DHCP : IP address = %s\n", temp);
+  ip4addr_ntoa_r(&sn_mask, temp, 32);
+  kprintf("DHCP : Subnet mask = %s\n", temp);
+  ip4addr_ntoa_r(&gw_addr, temp, 32);
+  kprintf("DHCP : Gateway = %s\n", temp);
   LWIP_DEBUGF(DHCP_DEBUG | LWIP_DBG_STATE, ("dhcp_bind(): IP: 0x%08"X32_F" SN: 0x%08"X32_F" GW: 0x%08"X32_F"\n",
     ip4_addr_get_u32(&dhcp->offered_ip_addr), ip4_addr_get_u32(&sn_mask), ip4_addr_get_u32(&gw_addr)));
   netif_set_addr(netif, &dhcp->offered_ip_addr, &sn_mask, &gw_addr);
@@ -1641,6 +1650,7 @@ decode_next:
 static void
 dhcp_recv(void *arg, struct udp_pcb *pcb, struct pbuf *p, const ip_addr_t *addr, u16_t port)
 {
+  kprintf("DHCP : DHCP Received!\n");
   struct netif *netif = ip_current_input_netif();
   struct dhcp *dhcp = netif->dhcp;
   struct dhcp_msg *reply_msg = (struct dhcp_msg *)p->payload;

@@ -845,6 +845,7 @@ tcp_process(struct tcp_pcb *pcb)
   case CLOSE_WAIT:
     /* FALLTHROUGH */
   case ESTABLISHED:
+    kprintf("$$$$Calling tcp_receive\n");
     tcp_receive(pcb);
     if (recv_flags & TF_GOT_FIN) { /* passive close */
       tcp_ack_now(pcb);
@@ -960,6 +961,9 @@ tcp_oos_insert_segment(struct tcp_seg *cseg, struct tcp_seg *next)
 static void
 tcp_receive(struct tcp_pcb *pcb)
 {
+  kprintf("##Entering tcp_receive\n");
+  //print_stackframe();
+  //panic("965");
   struct tcp_seg *next;
 #if TCP_QUEUE_OOSEQ
   struct tcp_seg *prev, *cseg;
@@ -1335,8 +1339,10 @@ tcp_receive(struct tcp_pcb *pcb)
     /* The sequence number must be within the window (above rcv_nxt
        and below rcv_nxt + rcv_wnd) in order to be further
        processed. */
+    kprintf("Line 1341 %x %x %x\n", seqno, pcb->rcv_nxt, pcb->rcv_nxt + pcb->rcv_wnd);
     if (TCP_SEQ_BETWEEN(seqno, pcb->rcv_nxt,
                         pcb->rcv_nxt + pcb->rcv_wnd - 1)) {
+      kprintf("Line 1344\n");
       if (pcb->rcv_nxt == seqno) {
         /* The incoming segment is the next in sequence. We check if
            we have to trim the end of the segment and update rcv_nxt
@@ -1416,8 +1422,8 @@ tcp_receive(struct tcp_pcb *pcb)
           }
         }
 #endif /* TCP_QUEUE_OOSEQ */
-
         pcb->rcv_nxt = seqno + tcplen;
+        kprintf("Updating pcb->rcv_nxt to %d\n", pcb->rcv_nxt);
 
         /* Update the receiver's (our) window. */
         LWIP_ASSERT("tcp_receive: tcplen > rcv_wnd\n", pcb->rcv_wnd >= tcplen);

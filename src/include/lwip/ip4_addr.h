@@ -152,7 +152,10 @@ struct netif;
 #endif
 
 /** Copy IP address - faster than ip4_addr_set: no NULL check */
-#define ip4_addr_copy(dest, src) ((dest).addr = (src).addr)
+//#define ip4_addr_copy(dest, src) ((dest).addr = (src).addr)
+//TODO: Fix unaligned access problem, but introducing unaligned access
+#define ip4_addr_copy(dest, src) memcpy(&(dest).addr, &(src).addr, sizeof((dest).addr));
+
 /** Safely copy one IP address to another (src may be NULL) */
 #define ip4_addr_set(dest, src) ((dest)->addr = \
                                     ((src) == NULL ? 0 : \

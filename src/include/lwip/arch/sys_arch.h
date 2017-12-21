@@ -4,6 +4,8 @@
 #include <sync.h>
 #include <sem.h>
 #include <mbox.h>
+#include <iobuf.h>
+#include <net_byteorder.h>
 #include "assert.h"
 #include "lwip/sys.h"
 

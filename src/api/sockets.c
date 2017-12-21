@@ -1080,7 +1080,7 @@ lwip_sendmsg(int s, const struct msghdr *msg, int flags)
     } else {
       pbuf_cat(chain_buf->p, p);
     }
-  }    
+  }
   /* save size of total chain */
   if (err == ERR_OK) {
     size = netbuf_len(chain_buf);
@@ -1287,7 +1287,7 @@ lwip_writev(int s, const struct iovec *iov, int iovcnt)
  * @param exceptset_out: set os sockets that had error events
  * @return number of sockets that had events (read/write/exception) (>= 0)
  */
-static int
+int
 lwip_selscan(int maxfdp1, fd_set *readset_in, fd_set *writeset_in, fd_set *exceptset_in,
              fd_set *readset_out, fd_set *writeset_out, fd_set *exceptset_out)
 {

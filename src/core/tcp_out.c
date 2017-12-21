@@ -1159,6 +1159,7 @@ tcp_output_segment(struct tcp_seg *seg, struct tcp_pcb *pcb, struct netif *netif
   /* The TCP header has already been constructed, but the ackno and
    wnd fields remain. */
   seg->tcphdr->ackno = htonl(pcb->rcv_nxt);
+  kprintf("TCP out is going to ACK %d\n", pcb->rcv_nxt);
 
   /* advertise our receive window size in this TCP segment */
 #if LWIP_WND_SCALE

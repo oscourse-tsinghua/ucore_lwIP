@@ -1,15 +1,24 @@
 #include "lwip/sys.h"
+#include "lwip/priv/api_msg.h"
+
+#include "lwip/ip.h"
+#include "lwip/udp.h"
+#include "lwip/tcp.h"
+#include "lwip/raw.h"
 #include <time/time.h>
 #include <clock.h>
 #include <ipc.h>
 #include <slab.h>
 #include <stddef.h>
+#include <string.h>
 
 int errno;
 
+#define ADJUST_RATIO 10
+
 sys_thread_t sys_thread_new(const char *name, lwip_thread_fn thread, void *arg, int stacksize, int prio)
 {
-  kernel_thread(thread, arg, NULL);
+  return kernel_thread(thread, arg, NULL);
 }
 
 void sys_init(void)
@@ -30,11 +39,13 @@ void sys_mutex_free(sys_mutex_t *mutex)
 
 void sys_mutex_lock(sys_mutex_t *mutex)
 {
+  //kprintf("Locking %x\n", mutex);
   down(mutex);
 }
 
 void sys_mutex_unlock(sys_mutex_t *mutex)
 {
+  //kprintf("UNLocking %x\n", mutex);
   up(mutex);
 }
 
@@ -42,7 +53,6 @@ err_t sys_sem_new(sys_sem_t *sem, u8_t count)
 {
   sem_init(&sem->sem, count);
   sem->valid = 1;
-  kprintf("sem is valid");
   return ERR_OK;
 }
 
@@ -63,14 +73,14 @@ u32_t __sem_wait(semaphore_t *sem, u32_t timeout)
     return 0;
   }
   //TODO: Workaround for invalid timer.
-  timeout /= 100;
+  timeout /= ADJUST_RATIO;
   if(timeout == 0) timeout = 1;
 	unsigned long saved_ticks;
 	timer_t timer;
 	ipc_timer_init(timeout, &saved_ticks, &timer);
 
 	uint32_t flags;
-	if ((flags = __down(sem, WT_USEM, &timer)) == 0) {
+	if ((flags = __down(sem, WT_KSEM, &timer)) == 0) {
 		return ticks - saved_ticks;
 	}
 	return SYS_ARCH_TIMEOUT;
@@ -93,11 +103,13 @@ void sys_sem_set_invalid(sys_sem_t *sem)
 
 uint32_t sys_now()
 {
-  return ticks * 100;
+  return ticks * ADJUST_RATIO;
 }
 
 err_t sys_mbox_new(sys_mbox_t *mbox, int size)
 {
+  if(size < 512) size = 512;
+  //kprintf("sys_mbox_new\n");
   //kprintf("sys_mbox_new = %lx\n", mbox);
   sys_mutex_new(&mbox->queue_mutex);
   sem_init(&mbox->fill_sem, 0);
@@ -114,6 +126,7 @@ void sys_mbox_free(sys_mbox_t *mbox)
 
 void sys_mbox_post(sys_mbox_t *mbox, void *msg)
 {
+  //kprintf("sys_mbox_post\n");
   down(&mbox->unused_sem);
   sys_mutex_lock(&mbox->queue_mutex);
   struct sys_msg* sys_msg = kmalloc(sizeof(struct sys_msg));
@@ -121,6 +134,7 @@ void sys_mbox_post(sys_mbox_t *mbox, void *msg)
   list_add_after(&mbox->queue, &sys_msg->list_entry);
   sys_mutex_unlock(&mbox->queue_mutex);
   up(&mbox->fill_sem);
+  //kprintf("sys_mbox_postexit\n");
 }
 
 err_t sys_mbox_trypost(sys_mbox_t *mbox, void *msg)
@@ -139,6 +153,7 @@ u32_t sys_arch_mbox_fetch(sys_mbox_t *mbox, void **msg, u32_t timeout)
   if(__sem_wait(&mbox->fill_sem, timeout) == SYS_ARCH_TIMEOUT) {
     return SYS_ARCH_TIMEOUT;
   }
+  //kprintf("sys_mbox_fetched\n");
   sys_mutex_lock(&mbox->queue_mutex);
   list_entry_t* entry = list_prev(&mbox->queue);
   struct sys_msg* sys_msg = container_of(entry, struct sys_msg, list_entry);
@@ -147,13 +162,15 @@ u32_t sys_arch_mbox_fetch(sys_mbox_t *mbox, void **msg, u32_t timeout)
   kfree(sys_msg);
   sys_mutex_unlock(&mbox->queue_mutex);
   up(&mbox->unused_sem);
+  //kprintf("sys_mbox_fetched exit\n");
+  return 1;
 }
 
 u32_t sys_arch_mbox_tryfetch(sys_mbox_t *mbox, void **msg)
 {
   //TODO: This is buggy, the same reason as @sys_mbox_trypost
   if(mbox->fill_sem.value == 0) return ERR_MEM;
-  sys_mbox_fetch(mbox, msg);
+  sys_arch_mbox_fetch(mbox, msg, 1);
   return ERR_OK;
 }
 
@@ -165,4 +182,12 @@ int sys_mbox_valid(sys_mbox_t *mbox)
 void sys_mbox_set_invalid(sys_mbox_t *mbox)
 {
   mbox->valid = 0;
+}
+
+void* calloc (size_t num, size_t size)
+{
+  void* ret = kmalloc(num * size);
+  if(ret == NULL) return ret;
+  memset(ret, 0, num * size);
+  return ret;
 }

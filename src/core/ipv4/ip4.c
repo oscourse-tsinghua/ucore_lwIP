@@ -367,6 +367,7 @@ return_noroute:
 err_t
 ip4_input(struct pbuf *p, struct netif *inp)
 {
+  kprintf("Debug! Entering ip4_input...\n");
   struct ip_hdr *iphdr;
   struct netif *netif;
   u16_t iphdr_hlen;
@@ -662,6 +663,7 @@ ip4_input(struct pbuf *p, struct netif *inp)
 #if LWIP_TCP
     case IP_PROTO_TCP:
       MIB2_STATS_INC(mib2.ipindelivers);
+      kprintf("$$$$Calling tcp_input\n");
       tcp_input(p, inp);
       break;
 #endif /* LWIP_TCP */
